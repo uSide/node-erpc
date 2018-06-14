@@ -15,5 +15,10 @@
     "chai": "^4.1.2",
     "mocha": "^5.2.0",
     "sinon": "^6.0.0"
+  },
+  "homepage": "https://github.com/uSide/node-erpc",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:uSide/node-erpc.git"
   }
 }
