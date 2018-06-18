@@ -49,22 +49,34 @@ describe("RPC", () => {
 
   describe("#encrypt", () => {
     it("encypts data object with secret", () => {
-      expect(RPC.encrypt("secret", { my: "data" })).to.equal(
-        "e2d23072ff61ee19b3f9c31a46b67cec"
-      );
+      let stub = sinon
+        .stub(RPC, "generateIV")
+        .returns(Buffer.from("16bytes init vec"));
+
+      expect(
+        RPC.encrypt("32bytes of secret encryption key", { my: "data" })
+      ).to.equal("MTZieXRlcyBpbml0IHZlY0siRZE1Lvxos+4XgT45N24=");
+
+      stub.restore();
     });
   });
 
   describe("#decrypt", () => {
     it("decrypts data object with secret", () => {
       expect(
-        RPC.decrypt("secret", "e2d23072ff61ee19b3f9c31a46b67cec")
+        RPC.decrypt(
+          "32bytes of secret encryption key",
+          "MTZieXRlcyBpbml0IHZlY0siRZE1Lvxos+4XgT45N24="
+        )
       ).to.deep.equal({ my: "data" });
     });
 
     it("fails if encoded data is invalid", () => {
       expect(() => {
-        RPC.decrypt("secret", "0779059bf545e980c0329201dbde4ea7");
+        RPC.decrypt(
+          "32bytes of secret encryption key",
+          "1iEabSmf4CIFMoLZA6merxIHSuh38UppQog3099kbpM="
+        );
       }).to.throw("INVALID_PAYLOAD");
     });
   });
@@ -75,7 +87,7 @@ describe("RPC", () => {
         {
           name: "known_server",
           endpoint: "endpoint",
-          secret: "secret"
+          secret: "32bytes of secret encryption key"
         }
       ]);
 
@@ -84,7 +96,10 @@ describe("RPC", () => {
       expect(request.client).to.equal("server");
       expect(request.method).to.equal("method");
 
-      let payload = RPC.decrypt("secret", request.payload);
+      let payload = RPC.decrypt(
+        "32bytes of secret encryption key",
+        request.payload
+      );
 
       expect(payload.param).to.equal(1);
       expect(payload.timestamp).to.be.a("number");
@@ -97,13 +112,13 @@ describe("RPC", () => {
         {
           name: "known_server",
           endpoint: "endpoint",
-          secret: "secret"
+          secret: "32bytes of secret encryption key"
         }
       ]);
 
       let response = RPC.success("known_server", { param: 1 });
 
-      expect();
+      expect(response.payload).to.be.a("string");
     });
   });
 
@@ -121,7 +136,7 @@ describe("RPC", () => {
         {
           name: "server",
           endpoint: "endpoint",
-          secret: "secret"
+          secret: "32bytes of secret encryption key"
         }
       ]);
 
@@ -131,7 +146,7 @@ describe("RPC", () => {
         {
           name: "known_server",
           endpoint: "endpoint",
-          secret: "secret"
+          secret: "32bytes of secret encryption key"
         }
       ]);
     });

@@ -9,6 +9,10 @@ class RPC {
     return +(Date.now() / 1000).toFixed();
   }
 
+  static generateIV() {
+    return crypto.randomBytes(16);
+  }
+
   static configure(name, network) {
     this.config = {
       name,
@@ -27,28 +31,46 @@ class RPC {
   }
 
   static encrypt(secret, payload) {
-    let cipher = crypto.createCipher("aes-256-cbc", secret);
-    return `${cipher.update(
-      JSON.stringify(payload),
-      "utf8",
-      "hex"
-    )}${cipher.final("hex")}`;
+    let key = Buffer.from(secret, "binary");
+    let iv = this.generateIV();
+
+    if (key.length != 32) {
+      throw new Error("INVALID_SECRET_LENGTH");
+    }
+
+    let cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+    let encrypted = cipher.update(JSON.stringify(payload));
+    let final = cipher.final();
+
+    let result = Buffer.concat(
+      [iv, encrypted, final],
+      iv.length + encrypted.length + final.length
+    );
+
+    return result.toString("base64");
   }
 
   static decrypt(secret, payload) {
-    let data;
+    let key = Buffer.from(secret, "binary");
+    let encrypted = Buffer.from(payload, 'base64')
+    let iv = encrypted.slice(0, 16);
+    let message = encrypted.slice(16);
+
+    if (key.length != 32) {
+      throw new Error("INVALID_SECRET_LENGTH");
+    }
+
+    let decoded;
 
     try {
-      let decipher = crypto.createDecipher("aes-256-cbc", secret);
-      data = `${decipher.update(payload, "hex", "utf8")}${decipher.final(
-        "utf8"
-      )}`;
+      let decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+      decoded = decipher.update(message) + decipher.final();
     } catch (e) {
       throw new Error("INVALID_SECRET");
     }
 
     try {
-      return JSON.parse(data);
+      return JSON.parse(decoded);
     } catch (e) {
       throw new Error("INVALID_PAYLOAD");
     }
@@ -79,11 +101,9 @@ class RPC {
     }
 
     let node = this.getNode(data.client);
-
     data.payload = this.decrypt(node.secret, data.payload);
 
     let delay = this.timestamp() - data.payload.timestamp;
-
     if (delay > this.TTL) {
       throw new Error("EXPIRED_REQUEST");
     }
@@ -93,7 +113,6 @@ class RPC {
 
   static success(client, payload) {
     let node = this.getNode(client);
-
     return {
       payload: this.encrypt(node.secret, payload)
     };
