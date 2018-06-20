@@ -1,14 +1,6 @@
 const crypto = require("crypto");
 
 class RPC {
-  static get TTL() {
-    return 1000;
-  }
-
-  static timestamp() {
-    return +(Date.now() / 1000).toFixed();
-  }
-
   static generateIV() {
     return crypto.randomBytes(16);
   }
@@ -52,7 +44,7 @@ class RPC {
 
   static decrypt(secret, payload) {
     let key = Buffer.from(secret, "binary");
-    let encrypted = Buffer.from(payload, 'base64')
+    let encrypted = Buffer.from(payload, "base64");
     let iv = encrypted.slice(0, 16);
     let message = encrypted.slice(16);
 
@@ -82,12 +74,7 @@ class RPC {
     return {
       client: this.config.name,
       method,
-      payload: this.encrypt(
-        node.secret,
-        Object.assign(payload, {
-          timestamp: this.timestamp()
-        })
-      )
+      payload: this.encrypt(node.secret, payload)
     };
   }
 
@@ -102,11 +89,6 @@ class RPC {
 
     let node = this.getNode(data.client);
     data.payload = this.decrypt(node.secret, data.payload);
-
-    let delay = this.timestamp() - data.payload.timestamp;
-    if (delay > this.TTL) {
-      throw new Error("EXPIRED_REQUEST");
-    }
 
     return data;
   }

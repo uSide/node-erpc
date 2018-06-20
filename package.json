@@ -1,6 +1,6 @@
 {
   "name": "@uside/erpc",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Simple and secure RPC helper lib",
   "main": "index.js",
   "scripts": {

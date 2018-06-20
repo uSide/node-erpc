@@ -102,7 +102,6 @@ describe("RPC", () => {
       );
 
       expect(payload.param).to.equal(1);
-      expect(payload.timestamp).to.be.a("number");
     });
   });
 
@@ -154,16 +153,6 @@ describe("RPC", () => {
     it("decodes client request", () => {
       let decoded = RPC.decode(request);
       expect(decoded.payload.param).to.equal(1);
-    });
-
-    it("fails if request expired", () => {
-      let stub = sinon.stub(RPC, "timestamp").returns(Date.now());
-
-      expect(() => {
-        RPC.decode(request);
-      }).to.throw("EXPIRED_REQUEST");
-
-      stub.restore();
     });
   });
 });
