@@ -70,6 +70,7 @@ class RPC {
 
   static request(client, method, payload) {
     let node = this.getNode(client);
+    payload.timestamp = (Date.now() / 1000).toFixed(0);
 
     return {
       client: this.config.name,
